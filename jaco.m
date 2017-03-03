@@ -12,22 +12,23 @@ Psi = reshape(newPsi,N,M) ;
 Om = reshape(newOm,N,M) ;
 
 % Compute the r derivatives seperatively
-psi_r = zeros(N,M) ;
-om_r = zeros(N,M) ;
-psi_r(2:end-1,:) = ( Psi(3:end,:) - Psi(1:end-2,:) )./(2*dr) ;
-om_r(2:end-1,:) = ( Om(3:end,:) - Om(1:end-2,:) )./(2*dr) ;
-
-
-% Compute the theta derivatives
 psi_th = zeros(N,M) ;
 om_th = zeros(N,M) ;
 
-psi_th(:,2:end-1) = (Psi(:,3:end) - Psi(:,1:end-2))./(2*dth) ;
-om_th(:,2:end-1) =  (Om(:,3:end) - Om(:,1:end-2))./(2*dth) ;
+psi_th(2:end-1,:) = ( Psi(3:end,:) - Psi(1:end-2,:) )./(2*dth) ;
+om_th(2:end-1,:) = ( Om(3:end,:) - Om(1:end-2,:) )./(2*dth) ;
+
+
+% Compute the theta derivatives
+psi_r = zeros(N,M) ;
+om_r = zeros(N,M) ;
+
+psi_r(:,2:end-1) = (Psi(:,3:end) - Psi(:,1:end-2))./(2*dr) ;
+om_r(:,2:end-1) =  (Om(:,3:end) - Om(:,1:end-2))./(2*dr) ;
 
 
 % Fill in the interior of the Jacobian. 
-Jac = om_r.*psi_th - om_th.*psi_r ; 
+Jac = -(om_r.*psi_th - om_th.*psi_r) ; 
 
 
 
@@ -116,7 +117,6 @@ Jac = om_r.*psi_th - om_th.*psi_r ;
 % % om_r =  (Om(:,M) - Om(:,M-1))/dr ;
 % 
 % Jac(:,M) =  - om_th1.*psi_r1 ;
-
 
 
 

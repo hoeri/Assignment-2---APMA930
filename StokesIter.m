@@ -8,18 +8,13 @@
     close all;  clear; clc;
 %
 % Problem parameters:
-Tsolves = [];
-NumITS = [] ;
-ReNums = [1 , 100, 200,300,400,500,600,700,800,900,1000,1100,1200] ;
-
-for Re = ReNums
     U = -1;
     Rmax = 1;
     alpha = pi/2;
-    
+    Re = 50 ;
 %
 % Set up finite difference grid
-    M = 50; dr = Rmax/(M-1);
+    M = 60; dr = Rmax/(M-1);
     N = 50; dth = alpha/(N-1);
     [rg, thg] = meshgrid(0: dr :Rmax, ...
                          alpha: -dth: 0);                     
@@ -79,7 +74,7 @@ for Re = ReNums
 % Solve via iteration
     
     tic;
-    itmax = 10000;
+    itmax = 1000;
     normPsi = zeros(1, itmax);
     normOm = zeros(1, itmax);
     tol = 1.d-9;
@@ -96,7 +91,7 @@ for Re = ReNums
           Jac = jaco(newPsi,newOm,M,N,dr,dth,U) ;
           Jac = R1.*Jac ;
         tilPsi = AP\(rhsP - BO*newOm);
-        tilOm = AO\(rhsO - BP*newPsi - Re*Jac);
+        tilOm = AO\(rhsO - BP*newPsi + Re*Jac);
         
 %  System maqtrix factorized
 %         cP = PP * (RP \ (rhsP - BO*newOm) ) ;
@@ -114,96 +109,69 @@ for Re = ReNums
         normOm(iter) = norm(tempOm - newOm)/norm(tempOm);
         newPsi = tempPsi;
         newOm = tempOm;
-%        disp(['Iteration: ', num2str(iter), ...
-%               ' Residual Psi = ', num2str(normPsi(iter)), ...
-%               ' Residual Omega = ', num2str(normOm(iter))])
+       disp(['Iteration: ', num2str(iter), ...
+              ' Residual Psi = ', num2str(normPsi(iter)), ...
+              ' Residual Omega = ', num2str(normOm(iter))])
         iter = iter + 1;
     end
     iter = iter - 1;
     t = toc;
     disp(' ')
-%     disp(['Time taken for solve = ', num2str(t)]);
-%    
-% %
-% % Plot convergence
-%     figure()
-%     loglog(1:iter, normPsi(1:iter), 'r')
-%     hold on
-%     loglog(1:iter, normOm(1:iter), 'b')
-%     xlabel('iter')
-%     ylabel('|| x^{m+1} - x^{m} ||/ || x^{m+1} ||')
-%     legend('\psi', '\omega', 'location', 'NorthEast')
-% %
-% % Plot
-%     psi = reshape(newPsi, size(rg));
-%     omega = reshape(newOm, size(rg));
-%     figure()
-%     subplot(1, 2, 1)
-%         pcolor(rg.*cos(thg), rg.*sin(thg), psi); colorbar;
-%         shading flat;  colormap(jet);  
-%         xlabel('x')
-%         ylabel('y')
-%         title('Streamfunction')
-%         axis([0 1 0 1])
-%         axis square
-%     subplot(1, 2, 2)
-%         pcolor(rg.*cos(thg), rg.*sin(thg), omega); colorbar;
-%         shading flat;  colormap(jet);  
-%         xlabel('x')
-%         ylabel('y')
-%         title('Vorticity')
-%         axis([0 1 0 1])
-%         axis square
-% %%
-% % Look for Eddies!
-%     figure()
-%     subplot(1, 2, 1)
-%         contour(rg.*cos(thg), rg.*sin(thg), psi, [0 0],'k','LineWidth',2); 
-%         hold on;
-%         contour(rg.*cos(thg), rg.*sin(thg), psi, 40);         
-% %         c = linspace(-5d-7, 0, 40);
-% %         contour(rg.*cos(thg), rg.*sin(thg), psi, c); 
-%         hold on
-%         shading flat;  colormap(jet);  
-%         xlabel('x')
-%         ylabel('y')
-%         title('Streamfunction')
-%         axis([0 1 0 1])
-%         axis square
-%     subplot(1, 2, 2)
-%         c = linspace(-20, 20, 40);
-%         contour(rg.*cos(thg), rg.*sin(thg), omega, c);
-%         shading flat;  colormap(jet);  
-%         xlabel('x')
-%         ylabel('y')
-%         title('Vorticity')
-%         axis([0 1 0 1])
-%         axis square
-%     
-   
-
-NumITS = [NumITS  iter];
-Tsolves = [Tsolves t] ;
-
-
-end 
-
-clf
-hold on 
-figure()
-
-plot(ReNums,NumITS,'r','LineWidth',2)
-plot(ReNums,Tsolves,'b','LineWidth',2)
-
-title('Time and itterations to reach steady state')
-
-xlabel('Reynolds number')
-
-legend('Number of Itterations','Time to Solve')
-
-hold off
-
-
-
-
-
+    disp(['Time taken for solve = ', num2str(t)]);
+    spy(reshape(Jac,N,M))
+%
+% Plot convergence
+    figure()
+    loglog(1:iter, normPsi(1:iter), 'r')
+    hold on
+    loglog(1:iter, normOm(1:iter), 'b')
+    xlabel('iter')
+    ylabel('|| x^{m+1} - x^{m} ||/ || x^{m+1} ||')
+    legend('\psi', '\omega', 'location', 'NorthEast')
+%
+% Plot
+    psi = reshape(newPsi, size(rg));
+    omega = reshape(newOm, size(rg));
+    figure()
+    subplot(1, 2, 1)
+        pcolor(rg.*cos(thg), rg.*sin(thg), psi); colorbar;
+        shading flat;  colormap(jet);  
+        xlabel('x')
+        ylabel('y')
+        title('Streamfunction')
+        axis([0 1 0 1])
+        axis square
+    subplot(1, 2, 2)
+        pcolor(rg.*cos(thg), rg.*sin(thg), omega); colorbar;
+        shading flat;  colormap(jet);  
+        xlabel('x')
+        ylabel('y')
+        title('Vorticity')
+        axis([0 1 0 1])
+        axis square
+%%
+% Look for Eddies!
+    figure()
+    subplot(1, 2, 1)
+        contour(rg.*cos(thg), rg.*sin(thg), psi, [0 0],'k','LineWidth',2); 
+        hold on;
+        contour(rg.*cos(thg), rg.*sin(thg), psi, 40);         
+%         c = linspace(-5d-7, 0, 40);
+%         contour(rg.*cos(thg), rg.*sin(thg), psi, c); 
+        hold on
+        shading flat;  colormap(jet);  
+        xlabel('x')
+        ylabel('y')
+        title('Streamfunction')
+        axis([0 1 0 1])
+        axis square
+    subplot(1, 2, 2)
+        c = linspace(-20, 20, 40);
+        contour(rg.*cos(thg), rg.*sin(thg), omega, c);
+        shading flat;  colormap(jet);  
+        xlabel('x')
+        ylabel('y')
+        title('Vorticity')
+        axis([0 1 0 1])
+        axis square
+    
