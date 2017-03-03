@@ -111,7 +111,7 @@ function [PsiOm] = SystemMatComp(numUn, nP, nO, M, N, alpha, dr, dth)
         k = k+3;
     end  
     k = k - 1;
- %   disp(['Number of nonzero entries = ', num2str(k)])
+    disp(['Number of nonzero entries = ', num2str(k)])
     i = i(1:k);
     j = j(1:k);
     PsiOm = PsiOm(1:k);

@@ -1,4 +1,4 @@
-%% Stokes Eddies - Iteration version
+%% Stokes Eddies - Iteration version with time
 %
 % Solve the driven cavity problem for Stokes flow in a wedge
 % using the streamfunction/vorticity formulation.
@@ -8,15 +8,10 @@
     close all;  clear; clc;
 %
 % Problem parameters:
-Tsolves = [];
-NumITS = [] ;
-ReNums = [1 , 100, 200,300,400,500,600,700,800,900,1000,1100,1200] ;
-
-for Re = ReNums
     U = -1;
     Rmax = 1;
     alpha = pi/2;
-    
+    Re = 2 ;
 %
 % Set up finite difference grid
     M = 50; dr = Rmax/(M-1);
@@ -57,7 +52,7 @@ for Re = ReNums
     disp(['Time for LU Decomposition = ', num2str(tlu)])
     
         
-    spy(PsiOmSys)
+    %spy(PsiOmSys)
     drawnow
     spparms('spumoni', 0)
     rhs = ConstructRhs(2*numUn, nP, nO, M, N, Rmax, dr, U);
@@ -79,7 +74,7 @@ for Re = ReNums
 % Solve via iteration
     
     tic;
-    itmax = 10000;
+    itmax = 200;
     normPsi = zeros(1, itmax);
     normOm = zeros(1, itmax);
     tol = 1.d-9;
@@ -95,8 +90,9 @@ for Re = ReNums
 %  System matrix not factorized
           Jac = jaco(newPsi,newOm,M,N,dr,dth,U) ;
           Jac = R1.*Jac ;
+          
         tilPsi = AP\(rhsP - BO*newOm);
-        tilOm = AO\(rhsO - BP*newPsi - Re*Jac);
+        tilOm = AO\(rhsO - BP*newPsi + Re*Jac);
         
 %  System maqtrix factorized
 %         cP = PP * (RP \ (rhsP - BO*newOm) ) ;
@@ -114,17 +110,22 @@ for Re = ReNums
         normOm(iter) = norm(tempOm - newOm)/norm(tempOm);
         newPsi = tempPsi;
         newOm = tempOm;
-%        disp(['Iteration: ', num2str(iter), ...
-%               ' Residual Psi = ', num2str(normPsi(iter)), ...
-%               ' Residual Omega = ', num2str(normOm(iter))])
+       disp(['Iteration: ', num2str(iter), ...
+              ' Residual Psi = ', num2str(normPsi(iter)), ...
+              ' Residual Omega = ', num2str(normOm(iter))])
         iter = iter + 1;
     end
     iter = iter - 1;
     t = toc;
     disp(' ')
-%     disp(['Time taken for solve = ', num2str(t)]);
-%    
-% %
+    disp(['Time taken for solve = ', num2str(t)]);
+    
+    
+  
+    
+    
+    
+%
 % % Plot convergence
 %     figure()
 %     loglog(1:iter, normPsi(1:iter), 'r')
@@ -133,8 +134,8 @@ for Re = ReNums
 %     xlabel('iter')
 %     ylabel('|| x^{m+1} - x^{m} ||/ || x^{m+1} ||')
 %     legend('\psi', '\omega', 'location', 'NorthEast')
-% %
-% % Plot
+%
+% Plot
 %     psi = reshape(newPsi, size(rg));
 %     omega = reshape(newOm, size(rg));
 %     figure()
@@ -154,8 +155,8 @@ for Re = ReNums
 %         title('Vorticity')
 %         axis([0 1 0 1])
 %         axis square
-% %%
-% % Look for Eddies!
+%%
+% Look for Eddies!
 %     figure()
 %     subplot(1, 2, 1)
 %         contour(rg.*cos(thg), rg.*sin(thg), psi, [0 0],'k','LineWidth',2); 
@@ -179,31 +180,61 @@ for Re = ReNums
 %         title('Vorticity')
 %         axis([0 1 0 1])
 %         axis square
-%     
+        
+        
+        
+ %
+% Evolve the system foreward in time
+ 
+    
+% Time parameters
+
+Tfinal = 2 ;
+T = 10 ;
+dt = Tfinal/T ;
+    
+
+% Perform the time steps using foreward euler
+
+figure()
+for k = 1:T ;
+        
+    % Evolve Omega
+newOm = newOm - Re*dt*jaco(newOm,newPsi,N,M,dr,dth,U) + AO*newOm + BP*newPsi + rhsO ;  
+
+    % Evolve Psi
+newPsi = AP\(rhsP - BO*newOm) ; 
+
    
 
-NumITS = [NumITS  iter];
-Tsolves = [Tsolves t] ;
+    
+end  
 
-
-end 
-
-clf
-hold on 
-figure()
-
-plot(ReNums,NumITS,'r','LineWidth',2)
-plot(ReNums,Tsolves,'b','LineWidth',2)
-
-title('Time and itterations to reach steady state')
-
-xlabel('Reynolds number')
-
-legend('Number of Itterations','Time to Solve')
-
-hold off
-
-
-
-
-
+ psi = reshape(newPsi, size(rg));
+ omega = reshape(newOm, size(rg));
+   
+  subplot(1, 2, 1)
+        contour(rg.*cos(thg), rg.*sin(thg), psi, [0 0],'k','LineWidth',2); 
+        hold on;
+        contour(rg.*cos(thg), rg.*sin(thg), psi, 40);         
+%         c = linspace(-5d-7, 0, 40);
+%         contour(rg.*cos(thg), rg.*sin(thg), psi, c); 
+        hold on
+        shading flat;  colormap(jet);  
+        xlabel('x')
+        ylabel('y')
+        title('Streamfunction')
+        axis([0 1 0 1])
+        axis square
+    subplot(1, 2, 2)
+        c = linspace(-20, 20, 40);
+        contour(rg.*cos(thg), rg.*sin(thg), omega, c);
+        shading flat;  colormap(jet);  
+        xlabel('x')
+        ylabel('y')
+        title('Vorticity')
+        axis([0 1 0 1])
+        axis square
+        
+        
+    
